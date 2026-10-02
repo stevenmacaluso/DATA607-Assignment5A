@@ -1,0 +1,9 @@
+---
+title: "Assignment 5A"
+format: html
+editor: visual
+---
+
+## Introduction
+
+In this assignment, I will be using a dataset that contains information on arrival delays for two airlines across five destinations, and performing analysis to compare the arrival delays of the two airlines. This will require reading the dataset (which is in CSV file format), tidying and transforming the data, and performing the analysis, all using R. I expect the biggest challenge of this assignment being the data tidying and transforming, as it will need to be resturctured for the analysis.
