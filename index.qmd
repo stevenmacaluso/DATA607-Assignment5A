@@ -7,3 +7,108 @@ editor: visual
 ## Introduction
 
 In this assignment, I will be using a dataset that contains information on arrival delays for two airlines across five destinations, and performing analysis to compare the arrival delays of the two airlines. This will require reading the dataset (which is in CSV file format), tidying and transforming the data, and performing the analysis, all using R. I expect the biggest challenge of this assignment being the data tidying and transforming, as it will need to be resturctured for the analysis.
+
+## Body
+
+To start, I load in all of the necessary libraries:
+
+```{r warning=FALSE, results='hide'}
+#| message: false
+library(tidyverse)
+library(knitr)
+library(janitor)
+```
+
+I then have to read the CSV from my github repository and create the dataframe:
+
+```{r}
+url <- "https://raw.githubusercontent.com/stevenmacaluso/DATA607-Assignment5A/refs/heads/main/data.csv"
+data <- read.csv(url)
+
+kable(data)
+```
+
+Now that the dataframe is created, it is time to do some data cleaning. First, I'll add headers to the columns that do not have headers:
+
+```{r}
+names(data)[1] <- "Airlines"
+names(data)[2] <- "Status"
+
+kable(data)
+```
+
+Next, I will make sure all empty strings are set to NA. This will be necessary for the next step of the data cleaning process:
+
+```{r}
+data[data == ""] <- NA
+
+kable(data)
+```
+
+Now that this is done, I can remove the blank row in the middle of the dataframe:
+
+```{r}
+data <- remove_empty(data, which = "rows")
+
+kable(data)
+```
+
+After this step, the only empty values are those under "Airlines." Knowing the structure of the original data is important here, because I know that these empty values should be changed to whatever is above it. I use the following code to make this change:
+
+```{r}
+for(i in 2:nrow(data)) {
+  
+  if(is.na(data$Airlines[i])){
+    data$Airlines[i] <- data$Airlines[i-1]
+  }
+}
+
+kable(data)
+```
+
+Now it is time to start transforming the data. First, I transfer this data out of wide format by using tidyr::gather:
+
+```{r}
+data_tf <- tidyr::gather(data, "City", "Count", 3:7)
+
+kable(data_tf)
+```
+
+Next, I will use tidyr::spread to group data by airline and city. This will create a unique value for each row that displays the combination of delayed and on-time arrivals by city and airline:
+
+```{r}
+data_tf2 <- tidyr::spread(data_tf, Status, Count)
+
+kable(data_tf2)
+```
+
+Now I can start the analysis. First, I'll start by making a graph displaying the number of delays by location:
+
+```{r}
+ggplot(data_tf2) + geom_bar(mapping = aes(x = City, y = delayed, fill = Airlines), stat = "identity") +
+  labs( title = "Number of Delays by Location", y = "Count")
+```
+
+Next, I'll do the same for on-time arrivals:
+
+```{r}
+ggplot(data_tf2) + geom_bar(mapping = aes(x = City, y = `on time`, fill = Airlines), stat = "identity") +
+  labs( title = "Number of On-Time Arrivals by Location", y = "Count")
+```
+
+Finally, we'll take a closer look at delayed arrivals, as I feel this is a more important metric for analyzing success / failure. The following code will create a summary displaying the maximum, minimum, mean, median, standard deviation, and interquartile range for arrival delays.
+
+```{r}
+d_sum <- data_tf2 %>% dplyr::group_by(Airlines) %>% 
+  dplyr::summarise(max=max(delayed), 
+                   min=min(delayed),
+                   mean=mean(delayed),
+                   sd=sd(delayed),
+                   median=median(delayed),
+                   IQR=IQR(delayed))
+kable(d_sum)
+```
+
+## Conclusion
+
+To conclude, this assignment showcases how to tidy and transform data in R for the purpose of analysis. When analyzing data, it is crucial to ensure the data is in a use-able format. Many times, data is organized in a certain way for readability purposes, but many times that format is not useful for the purpose of data analysis in R. Further analysis on this data can be done to build upon this work, or more data from different airlines and cities can be added.
